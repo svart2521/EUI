@@ -2134,6 +2134,9 @@ do
             if _G._ERB_Apply then _G._ERB_Apply() end
             if _G._EAB_Apply then _G._EAB_Apply() end
             if _G._ECME_Apply then _G._ECME_Apply() end
+            -- re-measure raw-sized trackers so they don't stay at the old scale
+            if _G._EUI_BattleRes_Apply then _G._EUI_BattleRes_Apply() end
+            if _G._EUI_Bloodlust_Apply then _G._EUI_Bloodlust_Apply() end
             -- Re-sync width/height matches against the new grid. UIParent:SetScale()
             -- does NOT fire UI_SCALE_CHANGED (that event is CVar-tied), so no listener
             -- catches this path. Debounced: the Options slider calls this repeatedly
