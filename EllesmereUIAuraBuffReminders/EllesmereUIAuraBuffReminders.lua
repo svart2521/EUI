@@ -696,6 +696,15 @@ local function _unitInRange(u)
     return vis == true
 end
 
+-- Cross-faction members in the open world return unreliable buff data.
+-- Treat them as unknown (skip) instead of counting them as missing.
+local function _unitAssistable(u)
+    if UnitIsUnit(u, "player") then return true end
+    local ok, res = pcall(UnitCanAssist, "player", u)
+    if not ok or isSecret(res) then return true end -- unreadable, assume ok
+    return res ~= false
+end
+
 -- Counts how many in-range beneficiaries have the buff vs how many should
 -- (the "12/15" coverage badge). `benefit` is the buff's benefit KEY
 -- ("intellect"/"attackPower"/nil = everyone). EABR.UnitBenefits resolves it
@@ -714,7 +723,7 @@ local function CountGroupBuffCoverage(spellIDs, benefit)
     if IsInRaid() then
         for i = 1, GetNumGroupMembers() do
             local u = "raid"..i
-            if _unitOk(u) and UnitIsPlayer(u) and _unitInRange(u) then
+            if _unitOk(u) and UnitIsPlayer(u) and _unitInRange(u) and _unitAssistable(u) then
                 if EABR.UnitBenefits(u, benefit) then
                     total = total + 1
                     if _unitHasBuff(u, spellIDs) then have = have + 1 end
@@ -728,7 +737,7 @@ local function CountGroupBuffCoverage(spellIDs, benefit)
         end
         for i = 1, GetNumSubgroupMembers() do
             local u = "party"..i
-            if _unitOk(u) and UnitIsPlayer(u) and _unitInRange(u) then
+            if _unitOk(u) and UnitIsPlayer(u) and _unitInRange(u) and _unitAssistable(u) then
                 if EABR.UnitBenefits(u, benefit) then
                     total = total + 1
                     if _unitHasBuff(u, spellIDs) then have = have + 1 end
@@ -853,7 +862,7 @@ function EABR.BuildGroupClassSet()
     if IsInRaid() then
         for i = 1, GetNumGroupMembers() do
             local u = "raid"..i
-            if _unitOk(u) and UnitIsPlayer(u) and not UnitIsUnit(u, "player") and _unitInRange(u) then
+            if _unitOk(u) and UnitIsPlayer(u) and not UnitIsUnit(u, "player") and _unitInRange(u) and _unitAssistable(u) then
                 local _, class = UnitClass(u)
                 if class ~= nil and not isSecret(class) then set[class] = true end
             end
@@ -861,7 +870,7 @@ function EABR.BuildGroupClassSet()
     elseif IsInGroup() then
         for i = 1, GetNumSubgroupMembers() do
             local u = "party"..i
-            if _unitOk(u) and UnitIsPlayer(u) and _unitInRange(u) then
+            if _unitOk(u) and UnitIsPlayer(u) and _unitInRange(u) and _unitAssistable(u) then
                 local _, class = UnitClass(u)
                 if class ~= nil and not isSecret(class) then set[class] = true end
             end
