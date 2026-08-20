@@ -889,6 +889,11 @@ local function MakeStatBlock(blockCfg, slot, content, barCtx, opts)
         Tick()
     end
 
+    -- Lets a tooltip resync the bar text with what it just sampled.
+    function inst:ForceSample()
+        ForceTick()
+    end
+
     function inst:Enable()
         content:Show()
         lastVal = -1
@@ -901,6 +906,13 @@ local function MakeStatBlock(blockCfg, slot, content, barCtx, opts)
             end
             RegisterInstEvents(self)
             ForceTick()
+            -- If the sample source isn't ready on the first tick, retry once
+            -- after a delay so a stale value doesn't stick around.
+            if opts.retryDelay then
+                C_Timer.After(opts.retryDelay, function()
+                    if not self._dead then ForceTick() end
+                end)
+            end
         else
             ns.RegisterHeartbeat(opts.hbPrefix .. ":" .. self.key, Tick)
         end
@@ -1181,7 +1193,9 @@ ns.BlockFactories.durability = function(blockCfg, slot, content, barCtx)
         return pct
     end
 
-    local function DurabilityTooltip()
+    local function DurabilityTooltip(inst)
+        -- Resync the bar text whenever the tooltip opens.
+        if inst then inst:ForceSample() end
         local ar, ag, ab = 1, 1, 1
         ns.Tip_Begin(content)
         ns.Tip_AddDouble("Durability", SampleDurability() .. "%",
@@ -1197,6 +1211,8 @@ ns.BlockFactories.durability = function(blockCfg, slot, content, barCtx)
         -- the block samples on those events alone -- no heartbeat, and with no
         -- other time-driven block enabled the 1s ticker never runs at all.
         events   = { "UPDATE_INVENTORY_DURABILITY", "PLAYER_ENTERING_WORLD" },
+        -- Retry once in case the value isn't ready on login.
+        retryDelay = 2,
         sample   = SampleDurability,
         suffix   = function() return "%" end,
         tooltip  = DurabilityTooltip,
