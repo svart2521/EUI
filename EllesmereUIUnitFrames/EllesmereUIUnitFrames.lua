@@ -9524,6 +9524,13 @@ local function ReloadFrames()
                 local uKey = UnitToSettingsKey(unit) or unit
                 local uSettings = uKey and db.profile[uKey]
                 local isClassMode = ((uSettings and uSettings.portraitMode) or "2d") == "class"
+                if unit == "player" then
+                    LogPortraitDebug("reflow", unit, {
+                        showPortrait = showPortrait and true or false,
+                        isClassMode = isClassMode and true or false,
+                        wasEnabled = frame:IsElementEnabled("Portrait") and true or false,
+                    })
+                end
                 if showPortrait then
                     frame.Portrait.backdrop:Show()
                     if not frame:IsElementEnabled("Portrait") then
