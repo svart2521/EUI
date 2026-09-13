@@ -3273,6 +3273,37 @@ end
 -- on eventless frames; the gate keeps repaint-on-any-event dispatch cheap). PostUpdate
 -- runs only after a real repaint: 2D heals what SetPortraitTexture resets, 3D
 -- re-applies zoom after SetUnit -- nothing to heal without a repaint.
+-- Temporary diagnostic (portrait-disapears): reporter's player portrait goes
+-- blank on level-up and only self-heals on the NEXT level-up (no /reload
+-- needed at that point). Unconditional, no toggle -- logs every portrait
+-- repaint decision plus a PLAYER_LEVEL_UP marker so a capture straddling a
+-- real occurrence shows exactly which event fired the bad paint and whether
+-- any qualifying event fired in between to explain the delayed self-heal.
+-- Remove once the root cause is confirmed from a live capture.
+local function LogPortraitDebug(reason, u, extra)
+    local ok = pcall(function()
+        EllesmereUIDB._portraitDebugLog = EllesmereUIDB._portraitDebugLog or {}
+        local log = EllesmereUIDB._portraitDebugLog
+        local entry = {
+            t = date("%Y-%m-%d %H:%M:%S"),
+            reason = reason,
+            unit = u,
+        }
+        if extra then
+            for k, v in pairs(extra) do entry[k] = v end
+        end
+        table.insert(log, entry)
+        while #log > 300 do table.remove(log, 1) end
+    end)
+end
+do
+    local levelUpMark = CreateFrame("Frame")
+    levelUpMark:RegisterEvent("PLAYER_LEVEL_UP")
+    levelUpMark:SetScript("OnEvent", function(_, _, level)
+        LogPortraitDebug("level_up", "player", { level = level })
+    end)
+end
+
 local PortraitOverride  -- forward declaration; painter registrations below the definition
 function PortraitOverride(self, event, evtUnit)
     local element = self.Portrait
@@ -3329,6 +3360,16 @@ function PortraitOverride(self, event, evtUnit)
         -- (the reason the plain-model exclusion above exists).
         or (event == "PORTRAITS_UPDATED" and isModel
             and element.GetModelFileID and element:GetModelFileID() == nil)
+    if u == "player" then
+        LogPortraitDebug("check", u, {
+            event = event,
+            isAvailable = isAvailable and true or false,
+            guidChanged = changed and true or false,
+            hasStateChanged = hasStateChanged and true or false,
+            isModel = isModel and true or false,
+            isClass = element.isClass and true or false,
+        })
+    end
     if hasStateChanged then
         if isModel then
             if not isAvailable then
