@@ -380,17 +380,9 @@ local function SetupAuraCVars()
     end
     -- Apply stacking state via the Midnight bitfield CVar.
     ns.RefreshStackingMotion()
+    -- One sizing path (it also widens the frame for Blizzard's friendly plates in instances).
     local function ApplyNamePlateClickArea()
-        if InCombatLockdown() then return end
-        local db = p or defaults
-        local sx = (db.hitboxScaleX or 100) / 100
-        if C_NamePlate and C_NamePlate.SetNamePlateSize then
-            C_NamePlate.SetNamePlateSize(GetHealthBarWidth() * sx, ns.NP_HitboxHeight(db))
-        end
-        if C_NamePlateManager and C_NamePlateManager.SetNamePlateHitTestInsets and Enum and Enum.NamePlateType then
-            C_NamePlateManager.SetNamePlateHitTestInsets(Enum.NamePlateType.Enemy, -10000, -10000, -10000, -10000)
-            C_NamePlateManager.SetNamePlateHitTestInsets(Enum.NamePlateType.Friendly, -10000, -10000, -10000, -10000)
-        end
+        ns.RefreshHitboxSize()
     end
     ApplyNamePlateClickArea()
     -- Prevent Blizzard resetting nameplate sizes on display changes (jitter).
