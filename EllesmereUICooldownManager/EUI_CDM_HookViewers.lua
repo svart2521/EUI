@@ -231,6 +231,12 @@ function ns.SetupViewerHooks()
                         -- return below, which any buff item's change holds for two frames.
                         if isBarViewer and ns.WakeTBBTickIfParked then ns.WakeTBBTickIfParked(itemFrame) end
                         ReapplyPositions()
+                        -- Blizzard already hid the expired icon: swap in its placeholder
+                        -- this frame, or the slot renders empty until the queue fires.
+                        local fcAS = _ecmeFC[itemFrame]
+                        if fcAS and fcAS.barKey and not itemFrame:IsActive() then
+                            CollectAndReanchor()
+                        end
                         if _activeStateReanchorPending then return end
                         _activeStateReanchorPending = true
                         _asDeferTicks = 0
