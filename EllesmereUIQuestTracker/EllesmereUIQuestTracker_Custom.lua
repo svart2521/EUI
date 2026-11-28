@@ -587,7 +587,6 @@ local function PaintTimer(l, now)
     l.text:SetTextColor(TimerRGB(pct))
     local bar = total and l.bar
     if bar then
-        bar:SetWidth(math.max(l.text:GetStringWidth() - l.dashW, 1))
         bar:SetValue(pct)
         local c = pct > 0.33 and TIMER_FILL or TIMER_LOW
         bar:SetStatusBarColor(c[1], c[2], c[3])
@@ -640,8 +639,11 @@ local function AddTimer(questID, y, width, x)
             -- The "- " prefix's width in the line's font: the bar starts under the text.
             l.text:SetText("- ")
             l.dashW = l.text:GetStringWidth()
-            l.text:SetText(l.lastText)
         end
+        -- Sized once from the full time with even digits: the countdown never resizes it.
+        l.text:SetText((TimerText(l.timerTotal):gsub("%d", "0")))
+        bar:SetWidth(math.max(l.text:GetStringWidth() - l.dashW, 1))
+        l.text:SetText(l.lastText)
         bar:ClearAllPoints()
         bar:SetPoint("TOPLEFT", l, "BOTTOMLEFT", l.dashW, -1)
         bar:Show()
