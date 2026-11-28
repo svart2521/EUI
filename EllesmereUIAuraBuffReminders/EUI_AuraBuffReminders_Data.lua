@@ -603,7 +603,7 @@ end
 
 -------------------------------------------------------------------------------
 --  Item count snapshot: GetItemCount is a per-item bag scan (~135-item consumable resolve was ~7ms cold).
---  Walks bags 0-4 ONCE into {itemID->count} (rebuilt only on bag change, consumables never in the reagent bag) so CachedGetItemCount is a hash lookup; DetectUsedItem shares it -- one bag walk per change, not two.
+--  Walks bags 0-5 ONCE into {itemID->count} (rebuilt only on bag change; Forever profession bags in the reagent slot hold oils) so CachedGetItemCount is a hash lookup; DetectUsedItem shares it -- one bag walk per change, not two.
 -------------------------------------------------------------------------------
 local _bagCounts = {}
 local _itemCountDirty = true
@@ -630,7 +630,7 @@ end
 local function RebuildBagCounts()
     wipe(_bagCounts)
     _itemCountDirty = false
-    for bag = 0, 4 do
+    for bag = 0, Enum.BagIndex.ReagentBag do
         local numSlots = C_Container and C_Container.GetContainerNumSlots(bag) or 0
         for slot = 1, numSlots do
             local info = C_Container and C_Container.GetContainerItemInfo(bag, slot)
